@@ -1,1 +1,2 @@
-export { AIAnalysisPanel, GeminiIntelligencePanel } from "./AIAnalysisPanel";
+export { AIAnalysisPanel, AIAnalysisPanel as GeminiIntelligencePanel } from "./AIAnalysisPanel";
+

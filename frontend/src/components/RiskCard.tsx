@@ -1,71 +1,25 @@
 "use client";
 
 import React from "react";
-import { LucideIcon, Database } from "lucide-react";
-
-export type RiskLevel = "LOW" | "MODERATE" | "HIGH" | "CRITICAL";
 
 export interface RiskCardProps {
   title: string;
-  value: string | number;
-  unit?: string;
-  level: RiskLevel;
-  icon: LucideIcon;
+  value: number;
+  unit: string;
+  level: "LOW" | "MODERATE" | "HIGH" | "CRITICAL";
   description: string;
-  detail?: string;
-  progress?: number;
-  isDemo?: boolean;
+  detail: string;
+  progress: number;
   className?: string;
 }
 
-const LEVEL_STYLES: Record<
-  RiskLevel,
-  {
-    badge: string;
-    valueColor: string;
-    border: string;
-    glow: string;
-    progressBar: string;
-    bottomBar: string;
-    label: string;
+const getLevelColors = (level: RiskCardProps["level"]) => {
+  switch (level) {
+    case "CRITICAL": return { text: "text-red-400", bg: "bg-red-500", border: "border-red-800", badge: "bg-red-900/80 text-red-300 border-red-700" };
+    case "HIGH": return { text: "text-orange-400", bg: "bg-orange-500", border: "border-orange-800", badge: "bg-orange-900/80 text-orange-300 border-orange-700" };
+    case "MODERATE": return { text: "text-amber-400", bg: "bg-amber-500", border: "border-amber-800", badge: "bg-amber-900/80 text-amber-300 border-amber-700" };
+    case "LOW": return { text: "text-green-400", bg: "bg-green-500", border: "border-green-800", badge: "bg-green-900/80 text-green-300 border-green-700" };
   }
-> = {
-  LOW: {
-    badge: "bg-emerald-950/80 text-emerald-300 border-emerald-800",
-    valueColor: "text-emerald-300",
-    border: "border-emerald-500/30",
-    glow: "from-emerald-500/10 to-transparent",
-    progressBar: "bg-emerald-500",
-    bottomBar: "bg-emerald-500",
-    label: "LOW",
-  },
-  MODERATE: {
-    badge: "bg-amber-950/80 text-amber-300 border-amber-800",
-    valueColor: "text-amber-300",
-    border: "border-amber-500/30",
-    glow: "from-amber-500/10 to-transparent",
-    progressBar: "bg-amber-500",
-    bottomBar: "bg-amber-500",
-    label: "MODERATE",
-  },
-  HIGH: {
-    badge: "bg-orange-950/80 text-orange-300 border-orange-800",
-    valueColor: "text-orange-300",
-    border: "border-orange-500/30",
-    glow: "from-orange-500/10 to-transparent",
-    progressBar: "bg-orange-500",
-    bottomBar: "bg-orange-500",
-    label: "HIGH",
-  },
-  CRITICAL: {
-    badge: "bg-rose-950/90 text-rose-200 border-rose-700 animate-pulse",
-    valueColor: "text-rose-200",
-    border: "border-rose-500/50 shadow-rose-950/20",
-    glow: "from-rose-500/15 to-transparent",
-    progressBar: "bg-rose-500",
-    bottomBar: "bg-rose-600",
-    label: "CRITICAL",
-  },
 };
 
 export const RiskCard: React.FC<RiskCardProps> = ({
@@ -73,90 +27,38 @@ export const RiskCard: React.FC<RiskCardProps> = ({
   value,
   unit,
   level,
-  icon: Icon,
   description,
   detail,
   progress,
-  isDemo = true,
   className = "",
 }) => {
-  const styles = LEVEL_STYLES[level];
-  const progressValue = progress !== undefined ? Math.min(100, Math.max(0, progress)) : undefined;
+  const styles = getLevelColors(level);
 
   return (
     <div
-      className={`bg-slate-900/90 border ${styles.border} rounded-2xl p-4 sm:p-5 shadow-lg relative overflow-hidden backdrop-blur-sm flex flex-col justify-between transition-all hover:border-slate-700 ${className}`}
-      aria-label={`${title}: ${value} (${level})`}
+      className={`bg-[#111827] border ${styles.border} rounded p-4 relative flex flex-col justify-between ${className}`}
     >
-      {/* Background radial glow */}
-      <div
-        className={`absolute -top-12 -right-12 w-28 h-28 bg-gradient-to-br ${styles.glow} rounded-full blur-2xl pointer-events-none`}
-      />
-
-      {/* Header: Title, Icon & Demo Badge */}
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-          {title}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{title}</span>
+        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${styles.badge}`}>
+          {level}
         </span>
-        <div className="flex items-center gap-1.5">
-          {isDemo && (
-            <span
-              className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 uppercase tracking-wider"
-              title="Demonstration value"
-            >
-              <Database className="w-2 h-2" />
-              DEMO
-            </span>
-          )}
-          <div className="p-1.5 rounded-lg bg-slate-800/80 text-slate-300">
-            <Icon className="w-4 h-4" />
-          </div>
-        </div>
       </div>
 
-      {/* Main Metric Value & Severity Badge */}
-      <div className="my-2">
-        <div className="flex items-baseline gap-1.5 flex-wrap">
-          <span className={`text-3xl font-black font-mono tracking-tight ${styles.valueColor}`}>
-            {value}
-          </span>
-          {unit && (
-            <span className="text-xs font-semibold text-slate-400">
-              {unit}
-            </span>
-          )}
-          <span
-            className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${styles.badge}`}
-          >
-            {styles.label}
-          </span>
-        </div>
-
-        {/* Progress / Gauge Bar */}
-        {progressValue !== undefined && (
-          <div className="w-full bg-slate-800/90 h-1.5 rounded-full mt-3 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${styles.progressBar}`}
-              style={{ width: `${progressValue}%` }}
-            />
-          </div>
-        )}
-
-        {/* Description */}
-        <p className="text-xs text-slate-400 mt-2 font-medium">
-          {description}
-        </p>
+      <div className="mb-2">
+        <span className={`text-2xl font-bold ${styles.text}`}>{value}</span>
+        <span className="text-xs text-slate-500 ml-1">{unit}</span>
       </div>
 
-      {/* Detail Footer */}
-      {detail && (
-        <div className="text-[11px] text-slate-400 pt-2.5 mt-2 border-t border-slate-800/80 flex items-center justify-between">
-          <span>{detail}</span>
-        </div>
-      )}
+      <div className="w-full bg-slate-800 rounded-sm h-1 mb-2">
+        <div
+          className={`${styles.bg} h-1 rounded-sm`}
+          style={{ width: `${Math.min(100, progress)}%` }}
+        />
+      </div>
 
-      {/* Bottom Accent Bar */}
-      <div className={`absolute bottom-0 left-0 right-0 h-1 ${styles.bottomBar}`} />
+      <p className="text-[10px] text-slate-500 mb-0.5">{description}</p>
+      <p className="text-[10px] text-slate-600">{detail}</p>
     </div>
   );
 };

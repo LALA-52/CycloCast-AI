@@ -112,3 +112,24 @@ CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ```ini
 NEXT_PUBLIC_API_URL=http://localhost:8000/api
 ```
+
+---
+
+## 🌐 Deploying to Vercel
+
+The project is pre-configured with `vercel.json` for 1-click Vercel deployment.
+
+### Option 1: Vercel CLI (Recommended)
+```bash
+# From workspace root directory
+vercel
+```
+
+### Option 2: Deploy via Vercel Dashboard / GitHub Integration
+1. Push repository to GitHub/GitLab.
+2. Import repository in **Vercel Dashboard**.
+3. Add optional Environment Variables in Vercel settings:
+   - `GEMINI_API_KEY`: Your Gemini API Key
+   - `GEMINI_MODEL`: `gemini-2.5-flash`
+4. Click **Deploy**. Vercel will automatically build the Next.js frontend and host FastAPI serverless endpoints at `/api/*`.
+

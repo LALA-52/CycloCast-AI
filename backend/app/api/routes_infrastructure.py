@@ -62,6 +62,7 @@ def resolve_infrastructure_type(raw_val: str) -> Optional[InfrastructureType]:
 
 @router.get("", response_model=List[Infrastructure], summary="List all infrastructure assets")
 @router.get("/", response_model=List[Infrastructure], include_in_schema=False)
+@router.get("/list", response_model=List[Infrastructure], include_in_schema=False)
 def list_infrastructure(
     type: Optional[List[str]] = Query(None, description="Filter by type: hospitals, roads, bridges, power stations, emergency shelters"),
     category: Optional[List[str]] = Query(None, description="Alias for type filter"),

@@ -4,59 +4,77 @@ import {
   InfrastructureRiskAssessment,
   RiskOverviewSummary,
   GeminiAnalysisResponse,
+  GeminiDirectAnalysis,
+  ResponsePlanResponse,
+  EmergencyAdvisoryResponse,
+  GEELayerResponse,
 } from "@/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const getApiBase = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    return "/api";
+  }
+  return "http://localhost:8000/api";
+};
 
-// Realistic demo benchmark data (Odisha coastal sector scenario)
+const API_BASE = getApiBase();
+
+// Demo Cyclone Varun scenario (AP coastal sector)
 const FALLBACK_CYCLONE: Cyclone = {
-  id: "CYC-2024-DANA",
-  name: "Cyclone Dana",
+  id: "CYC-2026-VARUN",
+  name: "Demo Cyclone Varun",
   category: 3,
-  center_lat: 20.65,
-  center_lon: 87.20,
-  wind_speed_kmh: 125,
-  gusts_kmh: 145,
-  central_pressure_hpa: 982,
-  movement_speed_kmh: 14,
+  center_lat: 16.05,
+  center_lon: 82.00,
+  wind_speed_kmh: 145,
+  gusts_kmh: 175,
+  central_pressure_hpa: 978,
+  movement_speed_kmh: 16,
   movement_direction: "NNW",
-  radius_destructive_km: 65,
-  radius_gale_km: 190,
-  estimated_storm_surge_m: 2.2,
-  estimated_landfall_time: "Landfall in ~6 hours (Dhamra/Bhitarkanika Coast)",
-  landfall_location: "Dhamra Port - Bhitarkanika Estuary, Odisha",
+  radius_destructive_km: 55,
+  radius_gale_km: 120,
+  estimated_storm_surge_m: 2.8,
+  estimated_landfall_time: "Landfall in ~6 hours (Coastal Andhra Pradesh)",
+  landfall_location: "Coastal Andhra Pradesh",
   rainfall_mm: 280,
   estimated_severity: "Very Severe Cyclonic Storm (VSCS)",
   last_updated_time: "30 Sep 2026, 01:30 UTC",
-  data_mode: "Realistic Demo Dataset (Odisha Coast Benchmark)",
+  data_mode: "Simulated Demo Dataset (AP Coast Benchmark)",
   is_simulated: true,
   forecast_track: [
     {
       time_offset_hours: 0,
-      latitude: 20.65,
-      longitude: 87.20,
-      wind_speed_kmh: 125,
-      central_pressure_hpa: 982,
-      estimated_surge_m: 2.2,
+      latitude: 16.05,
+      longitude: 82.00,
+      wind_speed_kmh: 145,
+      central_pressure_hpa: 978,
+      estimated_surge_m: 2.8,
     },
     {
       time_offset_hours: 6,
-      latitude: 20.88,
-      longitude: 86.95,
-      wind_speed_kmh: 130,
-      central_pressure_hpa: 980,
-      estimated_surge_m: 2.5,
+      latitude: 16.30,
+      longitude: 81.70,
+      wind_speed_kmh: 150,
+      central_pressure_hpa: 975,
+      estimated_surge_m: 3.0,
     },
     {
       time_offset_hours: 12,
-      latitude: 21.15,
-      longitude: 86.60,
-      wind_speed_kmh: 95,
-      central_pressure_hpa: 990,
-      estimated_surge_m: 1.4,
+      latitude: 16.60,
+      longitude: 81.35,
+      wind_speed_kmh: 110,
+      central_pressure_hpa: 988,
+      estimated_surge_m: 1.6,
     },
   ],
 };
+
+export interface RiskOverviewResult {
+  data: RiskOverviewSummary;
+  isLive: boolean;
+  error?: string | null;
+}
 
 export const apiService = {
   async getActiveCyclone(): Promise<Cyclone> {
@@ -105,13 +123,113 @@ export const apiService = {
   },
 
   async getRiskOverview(): Promise<RiskOverviewSummary> {
+    const res = await this.getRiskOverviewWithStatus();
+    return res.data;
+  },
+
+  async getRiskOverviewWithStatus(): Promise<RiskOverviewResult> {
     try {
       const res = await fetch(`${API_BASE}/risk/overview`, { cache: "no-store" });
-      if (!res.ok) throw new Error("Backend response error");
+      if (!res.ok) throw new Error(`Backend returned HTTP ${res.status}`);
+      const data: RiskOverviewSummary = await res.json();
+      return { data, isLive: true, error: null };
+    } catch (err: any) {
+      console.warn("FastAPI backend /risk/overview unavailable, using calibrated DEMO data:", err);
+      return {
+        data: this._fallbackRiskOverview(),
+        isLive: false,
+        error: err?.message || "Backend server unreachable",
+      };
+    }
+  },
+
+  async calculateRisk(payload: {
+    hazardExposure: number;
+    vulnerability: number;
+    criticality: number;
+    accessibilityRisk: number;
+  }): Promise<{ riskScore: number; riskCategory: string }> {
+    const res = await fetch(`${API_BASE}/risk/calculate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Risk calculation failed with status ${res.status}`);
+    return await res.json();
+  },
+
+  async analyzeGeminiImpact(payload?: {
+    cyclone_information?: any;
+    weather_conditions?: any;
+    infrastructure_risk_data?: any;
+  }): Promise<GeminiDirectAnalysis> {
+    const options: RequestInit = {
+      method: payload ? "POST" : "GET",
+      headers: payload ? { "Content-Type": "application/json" } : undefined,
+      body: payload ? JSON.stringify(payload) : undefined,
+      cache: "no-store",
+    };
+    const res = await fetch(`${API_BASE}/gemini/analyze`, options);
+    if (!res.ok) {
+      let errorMsg = `FastAPI server returned HTTP ${res.status}`;
+      try {
+        const errorData = await res.json();
+        if (errorData.detail) {
+          errorMsg = typeof errorData.detail === "string" ? errorData.detail : JSON.stringify(errorData.detail);
+        }
+      } catch (_) {}
+      throw new Error(errorMsg);
+    }
+    return await res.json();
+  },
+
+  async generateResponsePlan(): Promise<ResponsePlanResponse> {
+    const res = await fetch(`${API_BASE}/gemini/response-plan`, { cache: "no-store" });
+    if (!res.ok) {
+      let errorMsg = `FastAPI server returned HTTP ${res.status}`;
+      try {
+        const errorData = await res.json();
+        if (errorData.detail) {
+          errorMsg = typeof errorData.detail === "string" ? errorData.detail : JSON.stringify(errorData.detail);
+        }
+      } catch (_) {}
+      throw new Error(errorMsg);
+    }
+    return await res.json();
+  },
+
+  async generateEmergencyAdvisory(): Promise<EmergencyAdvisoryResponse> {
+    const res = await fetch(`${API_BASE}/gemini/advisory`, { cache: "no-store" });
+    if (!res.ok) {
+      let errorMsg = `FastAPI server returned HTTP ${res.status}`;
+      try {
+        const errorData = await res.json();
+        if (errorData.detail) {
+          errorMsg = typeof errorData.detail === "string" ? errorData.detail : JSON.stringify(errorData.detail);
+        }
+      } catch (_) {}
+      throw new Error(errorMsg);
+    }
+    return await res.json();
+  },
+
+  async getEarthEngineLayer(): Promise<GEELayerResponse> {
+    try {
+      const res = await fetch(`${API_BASE}/gee/layer`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Backend returned HTTP ${res.status}`);
       return await res.json();
     } catch (err) {
-      console.warn("Calculating client fallback risk overview:", err);
-      return this._fallbackRiskOverview();
+      console.warn("FastAPI GEE service unreachable, using graceful satellite fallback:", err);
+      return {
+        status: "fallback",
+        layer_id: "satellite-environmental-layer",
+        name: "Satellite / Environmental Layer",
+        tile_url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        attribution: "Tiles &copy; Esri, Maxar, Earthstar Geographics, CNES/Airbus DS",
+        source: "Environmental Satellite Imagery (Graceful Fallback)",
+        is_gee_active: false,
+        message: "GEE backend service offline. Environmental satellite layer fallback active.",
+      };
     }
   },
 
@@ -124,19 +242,19 @@ export const apiService = {
       console.warn("Using fallback AI analysis:", err);
       return {
         condition_interpretation:
-          "Cyclone Dana is tracking NNW at 14 km/h with core sustained winds of 125 km/h. Coastal surge estimated at 2.2m.",
+          "Cyclone Varun is tracking NNW at 14 km/h with core sustained winds of 145 km/h. Coastal surge estimated at 2.8m.",
         infrastructure_risk_explanation:
-          "High risk concentrated along Dhamra and Baitarani river estuary where low elevation (<4m) and road vulnerability coincide with peak tidal surge.",
+          "High risk concentrated along coastal lowlands where low elevation (<4m) and road vulnerability coincide with peak tidal surge.",
         top_priorities: [
           {
-            asset_name: "Dhamra Coastal Primary Emergency Hospital",
+            asset_name: "Coastal General Hospital",
             risk_level: "CRITICAL",
-            rationale: "Elevation 3.8m, surge exposure 88%, single access corridor.",
+            rationale: "Elevation 3.5m, surge exposure 92%, single access corridor.",
             immediate_action:
               "Deploy backup generator flood barricades and stage evacuation ambulances.",
           },
           {
-            asset_name: "Baitarani River Estuary Mega Bridge",
+            asset_name: "Coastal Bridge A",
             risk_level: "CRITICAL",
             rationale: "Pier scour risk and storm surge water pressure.",
             immediate_action:
@@ -145,7 +263,7 @@ export const apiService = {
         ],
         action_plan: {
           phase_t_minus_12h: [
-            "Evacuate vulnerable populations in Dhamra and Bhitarkanika coastal belt.",
+            "Evacuate vulnerable populations in coastal lowlands.",
             "Verify backup diesel fuel for trauma hospitals and mobile substations.",
           ],
           phase_t_minus_6h: [
@@ -157,12 +275,12 @@ export const apiService = {
             "Monitor water gauge telemetry continuously.",
           ],
           phase_post_landfall: [
-            "Deploy tree-clearing rapid teams along NH-16 evacuation corridor.",
+            "Deploy tree-clearing rapid teams along coastal evacuation corridors.",
             "Restore power to hospitals and emergency response shelters.",
           ],
         },
         official_emergency_advisory:
-          "OFFICIAL ADVISORY: Cyclone Dana approaching coastal Odisha. Severe surge and destructive winds expected. Follow emergency directives.",
+          "OFFICIAL ADVISORY: Demo Cyclone Varun approaching coastal region. Severe surge and destructive winds expected. Follow emergency directives.",
         source: "Client Fallback Mode (Start backend on port 8000 for live pipeline)",
         model: "CycloCast Offline Engine",
         is_fallback: true,
@@ -175,14 +293,14 @@ export const apiService = {
       {
         infrastructure: {
           id: "INF-HOSP-002",
-          name: "Dhamra Coastal Primary Emergency Hospital",
+          name: "Coastal General Hospital",
           type: "Hospital",
-          latitude: 20.812,
-          longitude: 86.915,
+          latitude: 16.05,
+          longitude: 82.02,
           criticality: 92.0,
-          elevation: 3.8,
+          elevation: 3.5,
           population_served: 75000,
-          flood_exposure: 88.0,
+          flood_exposure: 92.0,
           vulnerability: 82.0,
           accessibility_risk: 91.0,
           condition_notes: "Very low elevation coastal facility. Highly vulnerable to storm surge inundation.",
@@ -197,7 +315,7 @@ export const apiService = {
         risk_category: "CRITICAL",
         in_destructive_zone: true,
         in_gale_zone: true,
-        projected_surge_threat_m: 2.2,
+        projected_surge_threat_m: 2.8,
         recommended_priority_level: 1,
         primary_failure_mode: "Ground floor flooding and backup generator failure due to low elevation and storm surge",
         recommended_mitigation: "Deploy submersible pumps, move critical ICU equipment to upper floors, pre-position mobile generators on elevated pads.",
@@ -205,17 +323,17 @@ export const apiService = {
       {
         infrastructure: {
           id: "INF-BRID-001",
-          name: "Baitarani River Estuary Mega Bridge",
+          name: "Coastal Bridge A",
           type: "Bridge",
-          latitude: 20.760,
-          longitude: 86.820,
+          latitude: 16.08,
+          longitude: 81.98,
           criticality: 96.0,
-          elevation: 5.2,
+          elevation: 4.8,
           population_served: 480000,
-          flood_exposure: 85.0,
-          vulnerability: 74.0,
+          flood_exposure: 88.0,
+          vulnerability: 78.0,
           accessibility_risk: 88.0,
-          condition_notes: "Primary logistical artery connecting coastal evacuation routes with mainland highway NH-16.",
+          condition_notes: "Primary logistical artery connecting coastal evacuation routes with mainland highways.",
         },
         distance_to_eye_km: 42.1,
         hazard_exposure: 88.2,
@@ -227,7 +345,7 @@ export const apiService = {
         risk_category: "CRITICAL",
         in_destructive_zone: true,
         in_gale_zone: true,
-        projected_surge_threat_m: 2.1,
+        projected_surge_threat_m: 2.5,
         recommended_priority_level: 2,
         primary_failure_mode: "Hydrodynamic wave impact on superstructure and approach road scouring",
         recommended_mitigation: "Close bridge to non-emergency heavy traffic 6h before landfall; place rock armor along abutments.",
@@ -235,14 +353,14 @@ export const apiService = {
       {
         infrastructure: {
           id: "INF-PWR-001",
-          name: "Dhamra Port 220kV Grid Substation",
+          name: "East Coastal Power Station",
           type: "Power Station",
-          latitude: 20.805,
-          longitude: 86.960,
+          latitude: 16.02,
+          longitude: 82.05,
           criticality: 89.0,
           elevation: 4.1,
           population_served: 210000,
-          flood_exposure: 82.0,
+          flood_exposure: 84.0,
           vulnerability: 78.0,
           accessibility_risk: 75.0,
           condition_notes: "Supplies regional drinking water pumps and emergency hospital distribution grids.",
@@ -257,7 +375,7 @@ export const apiService = {
         risk_category: "CRITICAL",
         in_destructive_zone: true,
         in_gale_zone: true,
-        projected_surge_threat_m: 2.0,
+        projected_surge_threat_m: 2.4,
         recommended_priority_level: 3,
         primary_failure_mode: "Substation control room flooding and high-voltage transformer short-circuit",
         recommended_mitigation: "Execute controlled sectional isolation, install temporary flood deflection barriers, ready mobile substations.",
@@ -265,10 +383,10 @@ export const apiService = {
       {
         infrastructure: {
           id: "INF-ROAD-001",
-          name: "Rajnagar-Dhamra Coastal Evacuation Corridor (SH-9A)",
+          name: "Coastal Evacuation Highway",
           type: "Road",
-          latitude: 20.740,
-          longitude: 86.780,
+          latitude: 15.98,
+          longitude: 81.95,
           criticality: 90.0,
           elevation: 3.5,
           population_served: 165000,
@@ -287,7 +405,7 @@ export const apiService = {
         risk_category: "HIGH",
         in_destructive_zone: true,
         in_gale_zone: true,
-        projected_surge_threat_m: 1.8,
+        projected_surge_threat_m: 2.0,
         recommended_priority_level: 4,
         primary_failure_mode: "Complete inundation and coastal embankment washout cutting off evacuation corridor",
         recommended_mitigation: "Establish bypass detours via elevated inland routes; mark flood poles; deploy water-rescue teams.",
@@ -295,10 +413,10 @@ export const apiService = {
       {
         infrastructure: {
           id: "INF-SHEL-001",
-          name: "Bhitarkanika High-Elevation Cyclone Shelter",
+          name: "Regional High-Elevation Shelter",
           type: "Emergency Shelter",
-          latitude: 20.710,
-          longitude: 86.870,
+          latitude: 16.12,
+          longitude: 81.90,
           criticality: 94.0,
           elevation: 9.8,
           population_served: 4500,
@@ -346,7 +464,7 @@ export const apiService = {
         Road: { CRITICAL: 0, HIGH: 1, MODERATE: 0, LOW: 0, TOTAL: 1 },
         "Emergency Shelter": { CRITICAL: 0, HIGH: 0, MODERATE: 1, LOW: 0, TOTAL: 1 },
       },
-      cyclone_id: "CYC-2024-DANA",
+      cyclone_id: "CYC-DEMO-VARUN",
       calculation_timestamp: new Date().toISOString(),
       model_version: "transparent-v1.0 (40/30/20/10)",
     };

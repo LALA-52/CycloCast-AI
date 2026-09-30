@@ -2,8 +2,16 @@
 @import "leaflet/dist/leaflet.css";
 
 :root {
-  --background: #090d16;
-  --foreground: #f1f5f9;
+  --background: #0a0e17;
+  --foreground: #cbd5e1;
+  --surface: #111827;
+  --border: #1e293b;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --accent-critical: #dc2626;
+  --accent-high: #ea580c;
+  --accent-moderate: #d97706;
+  --accent-low: #16a34a;
 }
 
 body {
@@ -13,13 +21,12 @@ body {
   overflow-x: hidden;
 }
 
-/* Custom Leaflet popup dark styles */
+/* Leaflet dark popup theme */
 .leaflet-popup-content-wrapper {
-  background: #0f172a !important;
-  color: #f8fafc !important;
-  border: 1px solid #334155;
-  border-radius: 0.75rem !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+  background: #111827 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 4px !important;
   padding: 0 !important;
 }
 
@@ -29,11 +36,11 @@ body {
 }
 
 .leaflet-popup-tip {
-  background: #0f172a !important;
-  border: 1px solid #334155;
+  background: #111827 !important;
+  border: 1px solid #1e293b;
 }
 
 .leaflet-container {
   font-family: inherit;
-  background-color: #0b1120;
+  background-color: #0a0e17;
 }

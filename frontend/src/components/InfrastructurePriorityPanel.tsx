@@ -1,331 +1,220 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import {
-  Building2,
-  Zap,
-  Route,
-  ShieldCheck,
-  CheckCircle2,
-  Search,
-  Database,
-  Layers,
-} from "lucide-react";
-
-export type InfrastructureType =
-  | "Hospital"
-  | "Bridge"
-  | "Power station"
-  | "Road"
-  | "Emergency shelter";
-
-export type PriorityLevel = "CRITICAL" | "HIGH" | "MODERATE" | "LOW";
+import React, { useState } from "react";
 
 export interface InfrastructureItem {
   id: string;
   name: string;
-  type: InfrastructureType;
+  type: "Hospital" | "Bridge" | "Power station" | "Road" | "Emergency shelter";
   riskScore: number;
-  priority: PriorityLevel;
+  priority: "CRITICAL" | "HIGH" | "MODERATE" | "LOW";
   recommendedAction: string;
   location?: string;
   populationServed?: string;
 }
 
-// Local DEMO dataset including all 5 required examples
+const getPriorityStyle = (priority: InfrastructureItem["priority"]) => {
+  switch (priority) {
+    case "CRITICAL": return { border: "border-red-800", badge: "bg-red-900/80 text-red-300 border-red-700", text: "text-red-400" };
+    case "HIGH": return { border: "border-orange-800", badge: "bg-orange-900/80 text-orange-300 border-orange-700", text: "text-orange-400" };
+    case "MODERATE": return { border: "border-amber-800", badge: "bg-amber-900/80 text-amber-300 border-amber-700", text: "text-amber-400" };
+    case "LOW": return { border: "border-green-800", badge: "bg-green-900/80 text-green-300 border-green-700", text: "text-green-400" };
+  }
+};
+
+const getTypeLabel = (type: InfrastructureItem["type"]) => {
+  switch (type) {
+    case "Hospital": return "HOSP";
+    case "Bridge": return "BRDG";
+    case "Power station": return "PWR";
+    case "Road": return "ROAD";
+    case "Emergency shelter": return "SHLT";
+  }
+};
+
 export const DEFAULT_DEMO_INFRASTRUCTURE: InfrastructureItem[] = [
   {
     id: "infra-1",
-    name: "District General Hospital Puri",
-    type: "Hospital",
+    name: "Coastal Bridge A",
+    type: "Bridge",
     riskScore: 92,
     priority: "CRITICAL",
-    recommendedAction:
-      "Deploy auxiliary fuel generators, relocate ICU to level 2, pre-stage water pumps and emergency surgical oxygen.",
-    location: "Puri Coastal Belt",
-    populationServed: "450,000",
+    recommendedAction: "Restrict access and inspect alternate routes",
+    location: "Coastal zone",
+    populationServed: "320,000 served",
   },
   {
     id: "infra-2",
-    name: "Mahanadi Estuary Lifeline Bridge",
-    type: "Bridge",
-    riskScore: 88,
+    name: "Coastal General Hospital",
+    type: "Hospital",
+    riskScore: 87,
     priority: "CRITICAL",
-    recommendedAction:
-      "Restrict heavy freight transport immediately, activate pier scour telemetry, and stage emergency response engineering teams.",
-    location: "NH-16 Coastal Crossing",
-    populationServed: "320,000 daily transit",
+    recommendedAction: "Prepare emergency power and evacuation backup",
+    location: "Coastal zone",
+    populationServed: "95,000 served",
   },
   {
     id: "infra-3",
-    name: "Paradip Coastal 400kV Substation",
+    name: "East Coastal Power Station",
     type: "Power station",
     riskScore: 81,
-    priority: "HIGH",
-    recommendedAction:
-      "De-energize exposed low-elevation busbars, secure temporary anti-surge barriers, and pre-position line restoration crews.",
-    location: "Paradip Industrial Zone",
-    populationServed: "680,000",
+    priority: "CRITICAL",
+    recommendedAction: "Deploy flood protection and emergency inspection team",
+    location: "East sector",
+    populationServed: "210,000 served",
   },
   {
     id: "infra-4",
-    name: "State Highway 9A Coastal Corridor",
+    name: "Coastal Highway Section A",
     type: "Road",
-    riskScore: 74,
+    riskScore: 78,
     priority: "HIGH",
-    recommendedAction:
-      "Stage heavy excavation machinery for storm-debris clearing, establish tidal breach diversions via bypass B-4.",
-    location: "Astaranga Coastal Sector",
-    populationServed: "180,000 commuters",
+    recommendedAction: "Monitor flooding and prepare alternate route",
+    location: "Coastal corridor",
+    populationServed: "165,000 served",
   },
   {
     id: "infra-5",
-    name: "Chandipur Multi-Purpose Cyclone Shelter",
+    name: "Relief Shelter A",
     type: "Emergency shelter",
-    riskScore: 46,
+    riskScore: 43,
     priority: "MODERATE",
-    recommendedAction:
-      "Verify potable drinking water reserves, test rooftop solar backup, and prepare secondary bedding for incoming evacuees.",
-    location: "Chandipur Sector 3",
-    populationServed: "3,500 evacuee capacity",
+    recommendedAction: "Verify capacity, supplies, and accessibility",
+    location: "Inland zone",
+    populationServed: "4,500 capacity",
+  },
+  {
+    id: "infra-6",
+    name: "Coastal Bridge B",
+    type: "Bridge",
+    riskScore: 74,
+    priority: "HIGH",
+    recommendedAction: "Increase monitoring",
+    location: "South coastal zone",
+    populationServed: "180,000 served",
+  },
+  {
+    id: "infra-7",
+    name: "District Hospital B",
+    type: "Hospital",
+    riskScore: 69,
+    priority: "MODERATE",
+    recommendedAction: "Prepare contingency evacuation capacity",
+    location: "District inland",
+    populationServed: "120,000 served",
   },
 ];
 
 export interface InfrastructurePriorityPanelProps {
   items?: InfrastructureItem[];
-  className?: string;
-  onSelectItem?: (item: InfrastructureItem) => void;
+  isLive?: boolean;
+  isLoading?: boolean;
   selectedId?: string;
+  onSelectItem?: (item: InfrastructureItem) => void;
+  className?: string;
 }
-
-const PRIORITY_STYLES: Record<
-  PriorityLevel,
-  {
-    badge: string;
-    scoreColor: string;
-    progressBar: string;
-    borderAccent: string;
-  }
-> = {
-  CRITICAL: {
-    badge: "bg-rose-950/90 text-rose-200 border-rose-700 animate-pulse",
-    scoreColor: "text-rose-400",
-    progressBar: "bg-rose-500",
-    borderAccent: "border-rose-500/40",
-  },
-  HIGH: {
-    badge: "bg-orange-950/80 text-orange-300 border-orange-800",
-    scoreColor: "text-orange-400",
-    progressBar: "bg-orange-500",
-    borderAccent: "border-orange-500/30",
-  },
-  MODERATE: {
-    badge: "bg-amber-950/80 text-amber-300 border-amber-800",
-    scoreColor: "text-amber-400",
-    progressBar: "bg-amber-500",
-    borderAccent: "border-amber-500/30",
-  },
-  LOW: {
-    badge: "bg-emerald-950/80 text-emerald-300 border-emerald-800",
-    scoreColor: "text-emerald-400",
-    progressBar: "bg-emerald-500",
-    borderAccent: "border-emerald-500/30",
-  },
-};
-
-const getTypeIcon = (type: InfrastructureType) => {
-  switch (type) {
-    case "Hospital":
-      return <Building2 className="w-3.5 h-3.5 text-rose-400" />;
-    case "Bridge":
-      return <Layers className="w-3.5 h-3.5 text-sky-400" />;
-    case "Power station":
-      return <Zap className="w-3.5 h-3.5 text-amber-400" />;
-    case "Road":
-      return <Route className="w-3.5 h-3.5 text-indigo-400" />;
-    case "Emergency shelter":
-      return <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />;
-    default:
-      return <Building2 className="w-3.5 h-3.5 text-slate-400" />;
-  }
-};
 
 export const InfrastructurePriorityPanel: React.FC<InfrastructurePriorityPanelProps> = ({
   items = DEFAULT_DEMO_INFRASTRUCTURE,
-  className = "",
-  onSelectItem,
+  isLive = false,
+  isLoading = false,
   selectedId,
+  onSelectItem,
+  className = "",
 }) => {
-  const [selectedType, setSelectedType] = useState<string>("ALL");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      const matchesType = selectedType === "ALL" || item.type === selectedType;
-      const matchesSearch =
-        searchQuery.trim() === "" ||
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.recommendedAction.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.type.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesType && matchesSearch;
-    });
-  }, [items, selectedType, searchQuery]);
+  const filtered = items.filter((item) =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.type.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const typeFilterOptions = ["ALL", "Hospital", "Bridge", "Power station", "Road", "Emergency shelter"];
+  const sorted = [...filtered].sort((a, b) => b.riskScore - a.riskScore);
 
   return (
-    <div
-      className={`bg-slate-900/90 border border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col backdrop-blur-sm ${className}`}
+    <section
+      className={`bg-[#111827] border border-[#1e293b] rounded p-4 sm:p-5 flex flex-col ${className}`}
       aria-label="Infrastructure Priority Panel"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="bg-rose-500/15 border border-rose-500/30 text-rose-400 p-2 rounded-xl">
-            <Building2 className="w-4 h-4" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              Infrastructure Priority Panel
-            </h3>
-            <p className="text-xs text-slate-400">
-              Ranked critical facilities by vulnerability & impact
-            </p>
-          </div>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider">
+            Infrastructure Priority
+          </h3>
+          <p className="text-[11px] text-slate-500">
+            Ranked by vulnerability and impact
+          </p>
         </div>
-
-        <div className="flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 uppercase tracking-wider">
-            <Database className="w-2.5 h-2.5" />
-            DEMO
-          </span>
-          <span className="text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-lg">
-            {filteredItems.length} Assets
-          </span>
-        </div>
+        <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+          isLive
+            ? "bg-green-900/40 text-green-400 border-green-700"
+            : "bg-slate-800 text-slate-400 border-slate-700"
+        }`}>
+          {isLive ? "LIVE" : "DEMO"}
+        </span>
       </div>
 
-      {/* Search & Filter Controls */}
-      <div className="space-y-2 mb-3">
-        {/* Search */}
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-          <input
-            type="text"
-            placeholder="Search asset, type, or action..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-rose-500/60 transition shadow-inner"
-          />
-        </div>
-
-        {/* Filter Pills */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar text-xs">
-          {typeFilterOptions.map((type) => (
-            <button
-              key={type}
-              onClick={() => setSelectedType(type)}
-              className={`px-2 py-0.5 rounded-md text-[10px] font-semibold whitespace-nowrap transition ${
-                selectedType === type
-                  ? "bg-rose-500/20 text-rose-300 border border-rose-500/40"
-                  : "bg-slate-800/50 text-slate-400 hover:text-slate-200 border border-transparent"
-              }`}
-            >
-              {type === "ALL" ? "All" : type}
-            </button>
-          ))}
-        </div>
+      {/* Search */}
+      <div className="mb-3">
+        <input
+          type="text"
+          placeholder="Filter assets..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-[#0a0e17] border border-[#1e293b] rounded px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-600"
+        />
       </div>
 
-      {/* Scrollable Asset Cards List */}
-      <div className="space-y-3 overflow-y-auto max-h-[480px] pr-1 scrollbar-thin scrollbar-thumb-slate-700">
-        {filteredItems.length === 0 ? (
-          <div className="text-center py-10 text-slate-400 text-xs">
-            No infrastructure assets match the filter.
-          </div>
-        ) : (
-          filteredItems.map((item, index) => {
-            const styles = PRIORITY_STYLES[item.priority] || PRIORITY_STYLES.LOW;
+      {isLoading ? (
+        <div className="text-xs text-slate-500 py-6 text-center">Loading infrastructure data...</div>
+      ) : (
+        <div className="space-y-2 overflow-y-auto max-h-[420px]">
+          {sorted.map((item, index) => {
+            const styles = getPriorityStyle(item.priority);
             const isSelected = selectedId === item.id;
-
             return (
-              <div
+              <button
                 key={item.id}
+                type="button"
                 onClick={() => onSelectItem?.(item)}
-                className={`p-3.5 rounded-xl border transition-all ${
-                  onSelectItem ? "cursor-pointer" : ""
-                } ${
+                className={`w-full text-left p-3 rounded border transition-colors ${
                   isSelected
-                    ? "bg-slate-800/95 border-rose-400 ring-2 ring-rose-500/30 shadow-lg"
-                    : `bg-slate-950/60 ${styles.borderAccent} hover:bg-slate-900/80`
+                    ? `bg-[#0a0e17] ${styles.border} border-l-2`
+                    : "bg-[#0a0e17] border-[#1e293b]"
                 }`}
               >
-                {/* Header Row: Rank, Type Badge, Priority, and Score */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                      #{index + 1}
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono text-slate-500">
+                      {String(index + 1).padStart(2, "0")}
                     </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-300">
-                      {getTypeIcon(item.type)}
-                      {item.type}
+                    <span className="text-[10px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded border border-[#1e293b]">
+                      {getTypeLabel(item.type)}
                     </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${styles.badge}`}
-                    >
-                      {item.priority}
-                    </span>
-                    <span
-                      className={`text-xs font-black font-mono px-2 py-0.5 rounded bg-slate-800/90 border border-slate-700/80 ${styles.scoreColor}`}
-                    >
-                      {item.riskScore} <span className="text-[9px] text-slate-400">/ 100</span>
+                    <span className="text-xs font-semibold text-slate-200 truncate">
+                      {item.name}
                     </span>
                   </div>
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${styles.badge}`}>
+                    {item.priority}
+                  </span>
                 </div>
-
-                {/* Infrastructure Name */}
-                <h4 className="text-xs font-bold text-white mt-2">
-                  {item.name}
-                </h4>
-
-                {/* Risk Progress Bar */}
-                <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${styles.progressBar}`}
-                    style={{ width: `${Math.min(100, item.riskScore)}%` }}
-                  />
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-slate-500">
+                    Risk: <span className={`font-bold ${styles.text}`}>{item.riskScore}/100</span>
+                  </span>
+                  {item.populationServed && (
+                    <span className="text-[10px] text-slate-500">{item.populationServed}</span>
+                  )}
                 </div>
-
-                {/* Recommended Action Box */}
-                <div className="mt-2.5 p-2.5 bg-slate-900/90 rounded-lg border border-slate-800 space-y-1">
-                  <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
-                    Recommended Action
-                  </div>
-                  <p className="text-[11px] text-slate-300 leading-snug">
-                    {item.recommendedAction}
-                  </p>
-                </div>
-
-                {/* Metadata Footer */}
-                {(item.location || item.populationServed) && (
-                  <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
-                    {item.location && <span>Zone: <b className="text-slate-300">{item.location}</b></span>}
-                    {item.populationServed && (
-                      <span>Coverage: <b className="text-slate-300">{item.populationServed}</b></span>
-                    )}
-                  </div>
-                )}
-              </div>
+                <p className="text-[10px] text-slate-500 mt-1 truncate">
+                  {item.recommendedAction}
+                </p>
+              </button>
             );
-          })
-        )}
-      </div>
-    </div>
+          })}
+        </div>
+      )}
+    </section>
   );
 };
-
-export const InfrastructureList = InfrastructurePriorityPanel;

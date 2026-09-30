@@ -1,1 +1,2 @@
-export { InfrastructurePriorityPanel, InfrastructureList } from "./InfrastructurePriorityPanel";
+export { InfrastructurePriorityPanel, InfrastructurePriorityPanel as InfrastructureList } from "./InfrastructurePriorityPanel";
+

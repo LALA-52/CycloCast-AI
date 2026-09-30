@@ -118,3 +118,59 @@ export interface GeminiAnalysisResponse {
   model: string;
   is_fallback: boolean;
 }
+
+export interface GeminiDirectAnalysis {
+  impact_summary: string;
+  key_risks: string[];
+  recommended_actions: string[];
+  impactSummary?: string;
+  keyRisks?: string[];
+  recommendedActions?: string[];
+  model?: string;
+  source?: string;
+  timestamp?: string;
+}
+
+export interface ResponsePlanItem {
+  priority: number;
+  infrastructure: string;
+  risk_score: number;
+  reason: string;
+  recommended_action: string;
+}
+
+export interface ResponsePlanResponse {
+  decision_support_label: string;
+  disclaimer: string;
+  plan_title: string;
+  items: ResponsePlanItem[];
+  model?: string;
+  source?: string;
+  timestamp?: string;
+}
+
+export interface EmergencyAdvisoryResponse {
+  decision_support_label: string;
+  disclaimer: string;
+  title: string;
+  threat_summary: string;
+  affected_area: string;
+  major_hazards: string[];
+  infrastructure_priorities: string[];
+  preparedness_actions: string[];
+  model?: string;
+  source?: string;
+  timestamp?: string;
+}
+
+export interface GEELayerResponse {
+  status: string;
+  layer_id: string;
+  name: string;
+  tile_url: string;
+  attribution: string;
+  source: string;
+  is_gee_active: boolean;
+  message: string;
+  dataset?: string;
+}

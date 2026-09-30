@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, AliasChoices
 from app.models.infrastructure import Infrastructure, InfrastructureType
 
 class RiskCategory(str, Enum):
@@ -52,3 +52,38 @@ class RiskCalculationRequest(BaseModel):
     override_center_lat: Optional[float] = None
     override_center_lon: Optional[float] = None
     override_surge_m: Optional[float] = None
+
+class RiskCalculationInput(BaseModel):
+    hazardExposure: float = Field(
+        ...,
+        description="Hazard Exposure (0-100)",
+        validation_alias=AliasChoices("hazardExposure", "hazard_exposure")
+    )
+    vulnerability: float = Field(
+        ...,
+        description="Vulnerability (0-100)",
+        validation_alias=AliasChoices("vulnerability", "vulnerability_score")
+    )
+    criticality: float = Field(
+        ...,
+        description="Criticality (0-100)",
+        validation_alias=AliasChoices("criticality", "criticality_score")
+    )
+    accessibilityRisk: float = Field(
+        ...,
+        description="Accessibility Risk (0-100)",
+        validation_alias=AliasChoices("accessibilityRisk", "accessibility_risk")
+    )
+
+    model_config = {
+        "populate_by_name": True,
+        "extra": "ignore"
+    }
+
+class RiskCalculationResponse(BaseModel):
+    riskScore: float = Field(..., description="Normalized composite risk score (0-100)")
+    riskCategory: RiskCategory = Field(..., description="Risk category (LOW, MODERATE, HIGH, CRITICAL)")
+
+    model_config = {
+        "populate_by_name": True
+    }

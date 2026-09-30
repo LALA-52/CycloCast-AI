@@ -38,6 +38,42 @@ class RiskEngine:
     """
 
     @staticmethod
+    def calculate_risk(
+        hazard_exposure: float,
+        vulnerability: float,
+        criticality: float,
+        accessibility_risk: float
+    ) -> Tuple[float, RiskCategory]:
+        """
+        Pure transparent risk calculation service:
+        Risk = 40% Hazard Exposure + 30% Vulnerability + 20% Criticality + 10% Accessibility Risk
+        Normalized to 0–100.
+        Categories:
+          0–30 LOW
+          31–60 MODERATE
+          61–80 HIGH
+          81–100 CRITICAL
+        """
+        raw_score = (
+            (0.40 * hazard_exposure)
+            + (0.30 * vulnerability)
+            + (0.20 * criticality)
+            + (0.10 * accessibility_risk)
+        )
+        risk_score = round(max(0.0, min(100.0, raw_score)), 1)
+
+        if risk_score <= 30.0:
+            category = RiskCategory.LOW
+        elif risk_score <= 60.0:
+            category = RiskCategory.MODERATE
+        elif risk_score <= 80.0:
+            category = RiskCategory.HIGH
+        else:
+            category = RiskCategory.CRITICAL
+
+        return risk_score, category
+
+    @staticmethod
     def calculate_hazard_exposure(
         distance_km: float,
         cyclone: Cyclone,
