@@ -1,0 +1,117 @@
+[
+  {
+    "id": "CYC-2024-DANA",
+    "name": "Cyclone Dana",
+    "category": 3,
+    "center_lat": 20.65,
+    "center_lon": 87.20,
+    "wind_speed_kmh": 125.0,
+    "gusts_kmh": 145.0,
+    "central_pressure_hpa": 982.0,
+    "movement_speed_kmh": 14.0,
+    "movement_direction": "NNW",
+    "radius_destructive_km": 65.0,
+    "radius_gale_km": 190.0,
+    "estimated_storm_surge_m": 2.2,
+    "estimated_landfall_time": "Landfall in ~6 hours (Dhamra/Bhitarkanika Coast)",
+    "landfall_location": "Dhamra Port - Bhitarkanika Estuary, Odisha",
+    "is_simulated": false,
+    "forecast_track": [
+      {
+        "time_offset_hours": 0,
+        "latitude": 20.65,
+        "longitude": 87.20,
+        "wind_speed_kmh": 125.0,
+        "central_pressure_hpa": 982.0,
+        "estimated_surge_m": 2.2
+      },
+      {
+        "time_offset_hours": 6,
+        "latitude": 20.88,
+        "longitude": 86.95,
+        "wind_speed_kmh": 130.0,
+        "central_pressure_hpa": 980.0,
+        "estimated_surge_m": 2.5
+      },
+      {
+        "time_offset_hours": 12,
+        "latitude": 21.15,
+        "longitude": 86.60,
+        "wind_speed_kmh": 95.0,
+        "central_pressure_hpa": 990.0,
+        "estimated_surge_m": 1.4
+      },
+      {
+        "time_offset_hours": 24,
+        "latitude": 21.50,
+        "longitude": 86.10,
+        "wind_speed_kmh": 55.0,
+        "central_pressure_hpa": 998.0,
+        "estimated_surge_m": 0.5
+      }
+    ]
+  },
+  {
+    "id": "CYC-SIM-CATEGORY4",
+    "name": "Cyclone Vardha-Alpha (Simulated Cat 4)",
+    "category": 4,
+    "center_lat": 20.30,
+    "center_lon": 87.05,
+    "wind_speed_kmh": 185.0,
+    "gusts_kmh": 215.0,
+    "central_pressure_hpa": 955.0,
+    "movement_speed_kmh": 16.0,
+    "movement_direction": "NW",
+    "radius_destructive_km": 90.0,
+    "radius_gale_km": 240.0,
+    "estimated_storm_surge_m": 3.8,
+    "estimated_landfall_time": "Landfall in ~4 hours (Paradip Coastal Sector)",
+    "landfall_location": "Paradip Deepwater Terminal & Mahanadi Delta",
+    "is_simulated": true,
+    "forecast_track": [
+      {
+        "time_offset_hours": 0,
+        "latitude": 20.30,
+        "longitude": 87.05,
+        "wind_speed_kmh": 185.0,
+        "central_pressure_hpa": 955.0,
+        "estimated_surge_m": 3.8
+      },
+      {
+        "time_offset_hours": 4,
+        "latitude": 20.50,
+        "longitude": 86.75,
+        "wind_speed_kmh": 190.0,
+        "central_pressure_hpa": 950.0,
+        "estimated_surge_m": 4.1
+      },
+      {
+        "time_offset_hours": 12,
+        "latitude": 20.85,
+        "longitude": 86.25,
+        "wind_speed_kmh": 135.0,
+        "central_pressure_hpa": 975.0,
+        "estimated_surge_m": 2.1
+      }
+    ]
+  },
+  {
+    "id": "CYC-SIM-AMPHAN-HIST",
+    "name": "Super Cyclone Track (Historical Baseline)",
+    "category": 5,
+    "center_lat": 21.10,
+    "center_lon": 87.90,
+    "wind_speed_kmh": 220.0,
+    "gusts_kmh": 255.0,
+    "central_pressure_hpa": 930.0,
+    "movement_speed_kmh": 22.0,
+    "movement_direction": "NNE",
+    "radius_destructive_km": 115.0,
+    "radius_gale_km": 310.0,
+    "estimated_storm_surge_m": 4.8,
+    "estimated_landfall_time": "Historical benchmark track",
+    "landfall_location": "Sundarbans Coastal Biosphere",
+    "is_simulated": true,
+    "forecast_track": []
+  }
+]
