@@ -1,16 +1,13 @@
 {
-  "name": "cyclocast-ai",
+  "name": "cyclocast-ai-root",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
     "dev": "npm run dev --prefix frontend",
     "build": "npm run build --prefix frontend",
     "start": "npm run start --prefix frontend"
-  },
-  "dependencies": {
-    "@tailwindcss/postcss": "^4",
-    "next": "16.3.7",
-    "postcss": "^8",
-    "tailwindcss": "^4"
   }
 }
