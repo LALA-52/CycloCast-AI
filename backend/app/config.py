@@ -20,6 +20,7 @@ class Settings(BaseModel):
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
     WEATHER_API_KEY: str = os.getenv("WEATHER_API_KEY", "")
     GOOGLE_MAPS_API_KEY: str = os.getenv("GOOGLE_MAPS_API_KEY", "")
+    GEE_API_KEY: str = os.getenv("GEE_API_KEY", os.getenv("GOOGLE_MAPS_API_KEY", ""))
     GEE_PROJECT: str = os.getenv("GEE_PROJECT", "")
     GEE_SERVICE_ACCOUNT: str = os.getenv("GEE_SERVICE_ACCOUNT", "")
     GEE_PRIVATE_KEY: str = os.getenv("GEE_PRIVATE_KEY", "")
