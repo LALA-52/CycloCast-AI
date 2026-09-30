@@ -8,6 +8,9 @@
     "start": "npm run start --prefix frontend"
   },
   "dependencies": {
-    "next": "16.3.7"
+    "@tailwindcss/postcss": "^4",
+    "next": "16.3.7",
+    "postcss": "^8",
+    "tailwindcss": "^4"
   }
 }
